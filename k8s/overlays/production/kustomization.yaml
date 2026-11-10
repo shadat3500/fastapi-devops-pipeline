@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: devops-production
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+configMapGenerator:
+  - name: devops-app-config
+    behavior: merge
+    literals:
+      - APP_ENV=production
+
+replicas:
+  - name: devops-app
+    count: 3
+
+patches:
+  - target: { kind: HorizontalPodAutoscaler, name: devops-app }
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 10
+  - target: { kind: PodDisruptionBudget, name: devops-app }
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2

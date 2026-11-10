@@ -1,0 +1,14 @@
+# Local cluster: 1 server + 2 agents (so the 2+ replicas can spread across nodes).
+#   k3d cluster create --config k8s/k3d-config.yaml
+# k3s bundles Traefik (ingress controller) and metrics-server (needed by the HPA).
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: devops
+servers: 1
+agents: 2
+image: rancher/k3s:v1.31.5-k3s1
+ports:
+  # Ingress (Traefik behind the k3d load balancer) -> host, bound to localhost only.
+  - port: 127.0.0.1:18080:80
+    nodeFilters: [loadbalancer]
