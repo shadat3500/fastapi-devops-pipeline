@@ -244,14 +244,6 @@ render_json() {
   printf ']}\n'
 }
 
-if ! $quiet; then
-  if $output_json; then render_json; else render_text; fi
-fi
-# Warnings always reach stderr too, so cron mail / journald pick them up even with -q.
-if $quiet && (( ${#warnings[@]} > 0 )); then
-  printf '%s\n' "${warnings[@]}" >&2
-fi
-
 # ---------------------------------------------------------- log + rotation ---
 rotate_log() {
   local size i
@@ -292,6 +284,8 @@ write_log() {
   fi
 }
 
+# Log (and alert) BEFORE printing: if stdout is a closed pipe (e.g. `| head`),
+# SIGPIPE must not cost us the log entry or the alert.
 if $log_enabled; then
   write_log
 fi
@@ -313,6 +307,15 @@ notify() {
     || echo "$SCRIPT_NAME: webhook delivery failed" >&2
 }
 notify
+
+# Print last: log and alert are already done even if stdout is a closed pipe.
+if ! $quiet; then
+  if $output_json; then render_json; else render_text; fi
+fi
+# Warnings always reach stderr too, so cron mail / journald pick them up even with -q.
+if $quiet && (( ${#warnings[@]} > 0 )); then
+  printf '%s\n' "${warnings[@]}" >&2
+fi
 
 trap - ERR
 exit "$status"
