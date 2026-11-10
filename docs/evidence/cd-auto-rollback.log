@@ -1,0 +1,41 @@
+# Evidence: CD automatic rollback (GitHub Actions run "CD #7", job "Deploy → staging")
+# Release 1.0.7 deliberately returned 500 on /health in staging (commit 456d416).
+# deploy.sh smoke-tested it 10x, restored 1.0.2, and failed the job; production was skipped.
+# ("***" is GitHub's secret masking of the deploy user name inside the image path.)
+
+Run ssh target "DOCKER_CONFIG=~/devops-app/.docker APP_ENV='$ENVIRONMENT' APP_HOST_PORT='$APP_HOST_PORT' bash ~/devops-app/deploy.sh '$IMAGE' '$IMAGE_TAG'"
+2026-11-10T09:57:46Z [deploy] env=staging container=devops-app-staging port=8082
+2026-11-10T09:57:46Z [deploy] deploying ghcr.io/***3500/fastapi-devops-pipeline:1.0.7 (previous: 1.0.2)
+2026-11-10T09:57:49Z [deploy] smoke test attempt 1/10 failed; retrying in 3s
+2026-11-10T09:57:52Z [deploy] smoke test attempt 2/10 failed; retrying in 3s
+2026-11-10T09:57:55Z [deploy] smoke test attempt 3/10 failed; retrying in 3s
+2026-11-10T09:57:58Z [deploy] smoke test attempt 4/10 failed; retrying in 3s
+2026-11-10T09:58:01Z [deploy] smoke test attempt 5/10 failed; retrying in 3s
+2026-11-10T09:58:04Z [deploy] smoke test attempt 6/10 failed; retrying in 3s
+2026-11-10T09:58:07Z [deploy] smoke test attempt 7/10 failed; retrying in 3s
+2026-11-10T09:58:10Z [deploy] smoke test attempt 8/10 failed; retrying in 3s
+2026-11-10T09:58:13Z [deploy] smoke test attempt 9/10 failed; retrying in 3s
+2026-11-10T09:58:16Z [deploy] smoke test attempt 10/10 failed; retrying in 3s
+2026-11-10T09:58:19Z [deploy] FAILURE: 1.0.7 did not become healthy. Last container logs:
+{"ts": "2026-11-10T09:57:51.974+00:00", "level": "info", "logger": "uvicorn.error", "msg": "Started server process [1]", "service": "devops-app", "env": "staging", "version": "1.0.7", "color_message": "Started server process [\u001b[36m%d\u001b[0m]"}
+{"ts": "2026-11-10T09:57:51.974+00:00", "level": "info", "logger": "uvicorn.error", "msg": "Waiting for application startup.", "service": "devops-app", "env": "staging", "version": "1.0.7"}
+{"ts": "2026-11-10T09:57:51.975+00:00", "level": "info", "logger": "app", "msg": "startup complete", "service": "devops-app", "env": "staging", "version": "1.0.7", "port": 8080}
+{"ts": "2026-11-10T09:57:51.975+00:00", "level": "info", "logger": "uvicorn.error", "msg": "Application startup complete.", "service": "devops-app", "env": "staging", "version": "1.0.7"}
+{"ts": "2026-11-10T09:57:51.975+00:00", "level": "info", "logger": "uvicorn.error", "msg": "Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)", "service": "devops-app", "env": "staging", "version": "1.0.7", "color_message": "Uvicorn running on \u001b[1m%s://%s:%d\u001b[0m (Press CTRL+C to quit)"}
+{"ts": "2026-11-10T09:57:52.401+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.5, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:57:54.465+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.4, "client": "127.0.0.1"}
+{"ts": "2026-11-10T09:57:55.415+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.37, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:57:58.430+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.39, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:57:59.277+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.38, "client": "127.0.0.1"}
+{"ts": "2026-11-10T09:58:01.444+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.33, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:58:04.458+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.33, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:58:07.473+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.89, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:58:10.487+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.36, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:58:13.501+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.34, "client": "172.29.0.1"}
+{"ts": "2026-11-10T09:58:14.562+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.38, "client": "127.0.0.1"}
+{"ts": "2026-11-10T09:58:16.515+00:00", "level": "error", "logger": "app", "msg": "request", "service": "devops-app", "env": "staging", "version": "1.0.7", "method": "GET", "path": "/health", "status": 500, "duration_ms": 0.33, "client": "172.29.0.1"}
+2026-11-10T09:58:19Z [deploy] ROLLBACK: restoring ghcr.io/***3500/fastapi-devops-pipeline:1.0.2
+2026-11-10T09:58:20Z [deploy] smoke test attempt 1/10 failed; retrying in 3s
+2026-11-10T09:58:23Z [deploy] smoke test passed (attempt 2/10)
+2026-11-10T09:58:23Z [deploy] rollback to 1.0.2 succeeded; failing the deploy so CI shows red
+Error: Process completed with exit code 1.
