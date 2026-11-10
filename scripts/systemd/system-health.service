@@ -1,0 +1,29 @@
+# Install:
+#   sudo install -m 0755 scripts/system_health.sh /usr/local/bin/system_health.sh
+#   sudo cp scripts/systemd/system-health.{service,timer} /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now system-health.timer
+# Inspect:  systemctl list-timers system-health.timer ; journalctl -u system-health
+[Unit]
+Description=System health check (CPU, memory, disk, load)
+Documentation=file:///usr/local/bin/system_health.sh
+After=local-fs.target
+
+[Service]
+Type=oneshot
+# Optional: Slack/Discord webhook for alerts, kept out of the unit file.
+EnvironmentFile=-/etc/default/system-health
+ExecStart=/usr/local/bin/system_health.sh --quiet --log /var/log/system-health/health_log.txt
+# Exit 1 (warning) and 2 (critical) are expected results, not unit failures,
+# so a warning doesn't leave the unit in "failed" state; 3 (unknown) still fails.
+SuccessExitStatus=1 2
+# Hardening: read-only system, private /tmp, only the log directory is writable.
+DynamicUser=yes
+LogsDirectory=system-health
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+Nice=10
