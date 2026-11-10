@@ -1,0 +1,94 @@
+name: Deploy (reusable)
+
+# Deploys one image tag to one environment on the target host over SSH,
+# smoke-tests /health and rolls back automatically on failure (see scripts/deploy.sh).
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    name: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: ${{ inputs.environment }}
+    timeout-minutes: 10
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      IMAGE_TAG: ${{ inputs.image_tag }}
+      # Per-environment GitHub *variables* (not secrets): Settings → Environments.
+      APP_HOST_PORT: ${{ vars.APP_HOST_PORT }}
+      SSH_PORT: ${{ vars.SSH_PORT || '22' }}
+      # Per-environment GitHub *secrets*.
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate inputs
+        run: |
+          [[ "$IMAGE_TAG" =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo "Invalid image tag: $IMAGE_TAG"; exit 1; }
+          [[ "$APP_HOST_PORT" =~ ^[0-9]{2,5}$ ]] || { echo "vars.APP_HOST_PORT missing/invalid for $ENVIRONMENT"; exit 1; }
+          [[ -n "$DEPLOY_HOST" && -n "$DEPLOY_USER" ]] || { echo "DEPLOY_HOST/DEPLOY_USER secrets missing"; exit 1; }
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Configure SSH (strict host key checking)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host target
+            HostName ${DEPLOY_HOST}
+            User ${DEPLOY_USER}
+            Port ${SSH_PORT}
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 15
+          EOF
+
+      - name: Upload deploy script
+        run: |
+          ssh target 'mkdir -p ~/devops-app'
+          scp scripts/deploy.sh target:~/devops-app/deploy.sh
+
+      # Log the host in to GHCR with this job's short-lived GITHUB_TOKEN (expires when the
+      # job ends). An isolated DOCKER_CONFIG keeps it out of other users' docker config.
+      - name: Registry login on target (ephemeral token)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | ssh target \
+            "mkdir -p ~/devops-app/.docker && DOCKER_CONFIG=~/devops-app/.docker docker login ghcr.io -u '$GITHUB_ACTOR' --password-stdin"
+
+      - name: Deploy, smoke test, auto-rollback
+        run: |
+          ssh target "DOCKER_CONFIG=~/devops-app/.docker APP_ENV='$ENVIRONMENT' APP_HOST_PORT='$APP_HOST_PORT' bash ~/devops-app/deploy.sh '$IMAGE' '$IMAGE_TAG'"
+
+      - name: Registry logout on target
+        if: always()
+        run: ssh target 'DOCKER_CONFIG=~/devops-app/.docker docker logout ghcr.io' || true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### ${ENVIRONMENT}: \`${IMAGE}:${IMAGE_TAG}\` → ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
