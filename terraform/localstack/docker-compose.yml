@@ -1,0 +1,22 @@
+# LocalStack: local AWS API emulator used to test the Terraform code without an AWS account.
+#   export LOCALSTACK_AUTH_TOKEN=...   (free Hobby plan; never commit it)
+#   docker compose -f terraform/localstack/docker-compose.yml up -d
+name: devops-localstack
+
+services:
+  localstack:
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:4.9}
+    container_name: devops-localstack
+    ports:
+      - "127.0.0.1:4566:4566"   # localhost only
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?export LOCALSTACK_AUTH_TOKEN first}
+      SERVICES: s3,sts,iam,ec2,ssm,logs
+      # Mock EC2: Terraform gets real API responses, but no VM actually boots.
+      EC2_VM_MANAGER: mock
+    volumes:
+      - localstack-data:/var/lib/localstack
+    restart: unless-stopped
+
+volumes:
+  localstack-data:
