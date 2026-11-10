@@ -1,0 +1,3 @@
+# Fail the build on warnings and errors (info/style are reported only).
+failure-threshold: warning
+ignored: []
