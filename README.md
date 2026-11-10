@@ -546,7 +546,7 @@ with **pinned versions** and **resource limits** on every container:
 | Loki | 3.5.0 | log store: single binary, tsdb schema v13, **retention 7 days** (`retention_period: 168h` **with** `compactor.retention_enabled: true`, without which retention silently does nothing) |
 | Grafana Alloy | v1.9.0 | Docker service discovery → tails container logs → parses JSON → pushes to Loki |
 | Node Exporter | v1.9.1 | host CPU, memory, disk, network, load |
-| cAdvisor | v0.52.1 | per-container CPU, memory, limits, throttling, network |
+| cAdvisor | v0.60.6 | per-container CPU, memory, limits, throttling, network. (v0.52 could not map containers under Docker 29's containerd image store, so I upgraded after the Containers dashboard came up empty.) |
 | Grafana | 12.1.1 | datasources and dashboards **provisioned from files in git** (`allowUiUpdates: false`) |
 
 ### Metrics collection
