@@ -1,0 +1,9 @@
+# Allow-list approach: ignore everything, then include only what the image needs.
+*
+!app/
+!requirements.txt
+
+# Never ship caches even inside app/
+**/__pycache__
+**/*.pyc
+**/.pytest_cache

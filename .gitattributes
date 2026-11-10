@@ -1,0 +1,4 @@
+# Always use LF so scripts and configs work on Linux (VPS, containers, CI).
+* text=auto eol=lf
+*.png binary
+*.jpg binary

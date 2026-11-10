@@ -1,0 +1,4 @@
+# Accepted vulnerabilities, one CVE ID per line, each with a reason and a review date.
+# Empty by default: any CRITICAL finding fails CI.
+# Example:
+# CVE-2099-00000  # not reachable: affects X which we don't use; review by 2026-12-01
