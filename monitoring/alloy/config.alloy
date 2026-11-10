@@ -1,0 +1,94 @@
+// Grafana Alloy: discover containers via the Docker API, tail their logs, parse the
+// app's JSON logs, and ship everything to Loki.
+
+// 1. Docker service discovery. Opt-in: only containers carrying a `logging.service`
+//    label are collected (our app, the CD-deployed releases and the monitoring stack).
+//    On a shared host this avoids ingesting other teams' logs.
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+
+  filter {
+    name   = "label"
+    values = ["logging.service"]
+  }
+}
+
+// 2. Turn Docker metadata into a small, fixed set of Loki labels.
+discovery.relabel "containers" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_logging_service"]
+    target_label  = "service"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_app_environment"]
+    target_label  = "env"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+}
+
+// 3. Tail container logs.
+loki.source.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.containers.targets
+  relabel_rules    = discovery.relabel.containers.rules
+  refresh_interval = "15s"
+  forward_to       = [loki.process.app.receiver]
+}
+
+// 4. Parse the app's structured JSON logs.
+//    - `level` becomes a LABEL: tiny fixed set (debug/info/warning/error/critical),
+//      and it's what you filter on first when investigating.
+//    - `path`, `status`, `method` become STRUCTURED METADATA: filterable in LogQL
+//      ({service="app"} | path="/health") without creating a stream per value.
+//    - `ts` is used as the log timestamp.
+loki.process "app" {
+  stage.match {
+    selector = "{service=\"app\"}"
+
+    stage.json {
+      expressions = {
+        level  = "level",
+        path   = "path",
+        status = "status",
+        method = "method",
+        ts     = "ts",
+      }
+    }
+
+    stage.timestamp {
+      source = "ts"
+      format = "RFC3339Nano"
+    }
+
+    stage.labels {
+      values = { level = "" }
+    }
+
+    stage.structured_metadata {
+      values = {
+        path   = "",
+        status = "",
+        method = "",
+      }
+    }
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
