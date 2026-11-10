@@ -1,0 +1,25 @@
+# LocalStack: local AWS API emulator used to test the Terraform code without an AWS account.
+#   export LOCALSTACK_AUTH_TOKEN=...   (free Hobby plan; never commit it)
+#   docker compose -f terraform/localstack/docker-compose.yml up -d
+name: devops-localstack
+
+services:
+  localstack:
+    # Pinned to the version the evidence in docs/evidence/ was produced with. (4.9 was too
+    # old for AWS provider v6, which reads bucket tags via the s3control API.)
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:2026.10.6}
+    container_name: devops-localstack
+    ports:
+      - "127.0.0.1:4566:4566"   # localhost only
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?export LOCALSTACK_AUTH_TOKEN first}
+      # No SERVICES allow-list: services start lazily on first use. (An allow-list broke
+      # AWS provider v6, which also calls s3control to read bucket tags.)
+      # Mock EC2: Terraform gets real API responses, but no VM actually boots.
+      EC2_VM_MANAGER: mock
+    volumes:
+      - localstack-data:/var/lib/localstack
+    restart: unless-stopped
+
+volumes:
+  localstack-data:
