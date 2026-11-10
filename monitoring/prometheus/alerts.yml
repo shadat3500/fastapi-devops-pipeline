@@ -1,0 +1,80 @@
+# Alerting rules. Thresholds and `for` durations are explained in the README
+# ("Alerting rules"). Each rule says what is wrong and where to look first.
+groups:
+  - name: app
+    rules:
+      - alert: AppInstanceDown
+        # 4 failed scrapes in a row at 15s interval: a restart or rolling deploy takes
+        # <30s, so this does not fire during a normal release.
+        expr: up{job="app"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "App instance {{ $labels.instance }} ({{ $labels.env }}) is down"
+          description: "Prometheus cannot scrape /metrics for >1m. Check `docker ps`, container logs in Grafana (Application dashboard) and the last CD run."
+
+      - alert: AppHighErrorRate
+        # >5% of requests failing with 5xx, sustained 5m, and only with real traffic
+        # (>0.1 req/s) so a single failed request at night doesn't page anyone.
+        expr: |
+          (
+            sum by (env) (rate(http_errors_total{job="app"}[5m]))
+            /
+            sum by (env) (rate(http_requests_total{job="app"}[5m]))
+          ) > 0.05
+          and sum by (env) (rate(http_requests_total{job="app"}[5m])) > 0.1
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "High 5xx error rate in {{ $labels.env }}: {{ $value | humanizePercentage }}"
+          description: "More than 5% of requests return 5xx for 5m. Open the Application dashboard, check the error logs panel (level=error) and the failing path."
+
+      - alert: AppHighLatencyP95
+        # p95 above 500ms for 10m: the app normally answers in a few ms, so this means
+        # real saturation (CPU throttling, memory pressure) rather than noise.
+        expr: |
+          histogram_quantile(0.95, sum by (env, le) (rate(http_request_duration_seconds_bucket{job="app"}[5m]))) > 0.5
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "p95 latency in {{ $labels.env }} is {{ $value | humanizeDuration }}"
+          description: "Check CPU throttling / memory on the Containers dashboard."
+
+  - name: host
+    rules:
+      - alert: HostDiskUsageHigh
+        # 80% leaves time to act before 100% (Docker images and logs grow fast);
+        # 10m filters out short spikes from image pulls/builds.
+        expr: |
+          100 * (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs"}
+                   / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs"}) > 80
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} is {{ $value | printf \"%.0f\" }}% full"
+          description: "Clean up with `docker system prune` / old images, or grow the volume."
+
+      - alert: HostHighCpu
+        # Sustained 90% for 15m: short bursts (builds, deploys) are normal on a shared host.
+        expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 90
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Host CPU above 90% for 15m ({{ $value | printf \"%.0f\" }}%)"
+          description: "Find the busiest container on the Containers dashboard."
+
+  - name: containers
+    rules:
+      - alert: ContainerMemoryNearLimit
+        # 90% of the configured limit for 5m: the next step is an OOM kill. Only
+        # containers that HAVE a limit are evaluated (limit > 0).
+        expr: |
+          100 * (
+            container_memory_working_set_bytes{name!=""}
+            / (container_spec_memory_limit_bytes{name!=""} > 0)
+          ) > 90
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Container {{ $labels.name }} uses {{ $value | printf \"%.0f\" }}% of its memory limit"
+          description: "Likely OOM-kill soon. Check for a leak (memory steadily rising) or raise the limit."

@@ -42,13 +42,17 @@ services:
           cpus: "0.10"
           memory: 64M
     labels:
-      # Picked up by Grafana Alloy for log collection (see monitoring/alloy).
+      # Opt-in labels read by Grafana Alloy for log collection (see monitoring/alloy).
       logging.service: app
+      app.environment: ${APP_ENV:-local}
     networks:
       - devops-app
 
 networks:
   devops-app:
-    # Explicit unique name so the monitoring compose file can attach to it
-    # without colliding with other projects on a shared host.
+    # Shared, pre-created network (`docker network create devops-app-net`).
+    # It is external because three things attach to it independently: this compose
+    # app, the CD-deployed staging/production containers (scripts/deploy.sh) and
+    # Prometheus from docker-compose.monitoring.yml.
     name: devops-app-net
+    external: true

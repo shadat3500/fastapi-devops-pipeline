@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: devops-app
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # The application. Targets come from targets/<PROM_TARGETS>/*.yml so the same config
+  # works locally (compose app) and on the VPS (CD-deployed staging + production).
+  - job_name: app
+    metrics_path: /metrics
+    file_sd_configs:
+      - files: [/etc/prometheus/targets/*.yml]
+        refresh_interval: 30s
+
+  # Host metrics. node-exporter runs in the host network namespace and listens on the
+  # monitoring bridge gateway IP (see docker-compose.monitoring.yml).
+  - job_name: node
+    static_configs:
+      - targets: ["172.31.250.1:9100"]
+        labels: { host: docker-host }
+
+  # Per-container metrics.
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # Drop series for cgroups that aren't containers (keeps cardinality down).
+      - source_labels: [name]
+        regex: ""
+        action: drop
+
+  # The monitoring stack watches itself.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+  - job_name: alloy
+    static_configs:
+      - targets: ["alloy:12345"]
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]

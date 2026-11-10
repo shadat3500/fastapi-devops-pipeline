@@ -1,0 +1,4 @@
+# Local run: the app started by docker-compose.yml.
+- targets: ["devops-app:8080"]
+  labels:
+    env: local

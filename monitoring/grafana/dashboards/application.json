@@ -1,0 +1,190 @@
+{
+  "uid": "devops-app",
+  "title": "Application",
+  "description": "Request rate, errors, latency (p50/p95/p99) and correlated logs for the devops-app service.",
+  "tags": ["devops-app", "application"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "links": [
+    { "title": "Containers", "type": "link", "url": "/d/devops-containers", "icon": "dashboard", "keepTime": true },
+    { "title": "Host", "type": "link", "url": "/d/devops-host", "icon": "dashboard", "keepTime": true }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": { "query": "label_values(up{job=\"app\"}, env)", "refId": "env" },
+        "definition": "label_values(up{job=\"app\"}, env)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "level",
+        "label": "Log level",
+        "type": "custom",
+        "query": "error,warning,info,debug",
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".+",
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Request rate",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_requests_total{job=\"app\", env=~\"$env\", path!=\"/metrics\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Error rate (5xx)",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "decimals": 2,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 5 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [
+        { "refId": "A", "expr": "100 * (sum(rate(http_errors_total{job=\"app\", env=~\"$env\"}[$__rate_interval])) or vector(0)) / clamp_min(sum(rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval])), 1e-9)" }
+      ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Latency p95",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "decimals": 3,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.25 }, { "color": "red", "value": 0.5 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"app\", env=~\"$env\", path!=\"/metrics\"}[$__rate_interval])))" }
+      ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Instances up",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } } ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [
+        { "refId": "A", "expr": "up{job=\"app\", env=~\"$env\"}", "legendFormat": "{{env}}", "instant": true }
+      ]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Error rate (5xx %) by environment",
+      "description": "Share of requests answered with 5xx. Alert AppHighErrorRate fires above 5% for 5m. Investigate in the log panel to the right.",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15, "thresholdsStyle": { "mode": "line+area" } },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "transparent", "value": null }, { "color": "red", "value": 5 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{env}}", "expr": "100 * ((sum by (env) (rate(http_errors_total{job=\"app\", env=~\"$env\"}[$__rate_interval])) or 0 * sum by (env) (rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval]))) / clamp_min(sum by (env) (rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval])), 1e-9))" }
+      ]
+    },
+    {
+      "id": 6, "type": "logs", "title": "Error & warning logs (same time range)",
+      "description": "Loki: {service=\"app\"} filtered to level error|warning. Expand a line to see path, status, method (structured metadata).",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 9 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true, "dedupStrategy": "none", "prettifyLogMessage": false },
+      "targets": [
+        { "refId": "A", "expr": "{service=\"app\", env=~\"$env\", level=~\"error|warning\"} | json duration_ms=\"duration_ms\", msg=\"msg\" | line_format \"{{.env}} {{.level}} {{.method}} {{.path}} → {{.status}} ({{.duration_ms}} ms) {{.msg}}\"" }
+      ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Request rate by status code",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0, "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 20, "stacking": { "mode": "normal" } } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{env}} {{status}}", "expr": "sum by (env, status) (rate(http_requests_total{job=\"app\", env=~\"$env\", path!=\"/metrics\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Latency p50 / p95 / p99",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "min": 0, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 0 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "p50", "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"app\", env=~\"$env\", path!=\"/metrics\"}[$__rate_interval])))" },
+        { "refId": "B", "legendFormat": "p95", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"app\", env=~\"$env\", path!=\"/metrics\"}[$__rate_interval])))" },
+        { "refId": "C", "legendFormat": "p99", "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"app\", env=~\"$env\", path!=\"/metrics\"}[$__rate_interval])))" }
+      ]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Requests by path",
+      "gridPos": { "x": 0, "y": 21, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{method}} {{path}}", "expr": "sum by (method, path) (rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Errors by path (5xx/s)",
+      "gridPos": { "x": 12, "y": 21, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "bars", "fillOpacity": 60 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{env}} {{path}}", "expr": "sum by (env, path) (rate(http_errors_total{job=\"app\", env=~\"$env\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 11, "type": "logs", "title": "All application logs (filter: Log level)",
+      "gridPos": { "x": 0, "y": 29, "w": 24, "h": 10 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true, "dedupStrategy": "none" },
+      "targets": [
+        { "refId": "A", "expr": "{service=\"app\", env=~\"$env\", level=~\"$level\"}" }
+      ]
+    }
+  ]
+}

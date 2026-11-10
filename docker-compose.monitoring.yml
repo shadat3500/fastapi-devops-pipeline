@@ -1,0 +1,154 @@
+# Observability stack: Prometheus, Grafana, Loki, Grafana Alloy, Node Exporter, cAdvisor.
+#
+#   docker network create devops-app-net          # once (idempotent: ignore "already exists")
+#   cp .env.example .env && $EDITOR .env          # set GF_ADMIN_PASSWORD
+#   docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+#
+# Exposure: ONLY Grafana publishes a port, and by default only on 127.0.0.1
+# (reach it remotely with `ssh -L 3000:127.0.0.1:3000 user@host`). Everything else
+# talks over the private `monitoring` bridge network.
+name: devops-app
+
+x-logging: &default-logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: devops-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+      - --storage.tsdb.retention.size=2GB
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      # Which app instances to scrape: "local" (compose app) or "vps" (CD-deployed staging + production)
+      - ./monitoring/prometheus/targets/${PROM_TARGETS:-local}:/etc/prometheus/targets:ro
+      - prometheus-data:/prometheus
+    networks: [monitoring, devops-app]
+    restart: unless-stopped
+    deploy: { resources: { limits: { cpus: "1.0", memory: 1G } } }
+    labels: { logging.service: prometheus }
+    logging: *default-logging
+
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: devops-loki
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    networks: [monitoring]
+    restart: unless-stopped
+    deploy: { resources: { limits: { cpus: "1.0", memory: 512M } } }
+    labels: { logging.service: loki }
+    logging: *default-logging
+
+  alloy:
+    image: grafana/alloy:v1.9.0
+    container_name: devops-alloy
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      # Read-only socket: Docker service discovery + reading container log streams.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+    networks: [monitoring]
+    depends_on: [loki]
+    restart: unless-stopped
+    deploy: { resources: { limits: { cpus: "0.5", memory: 256M } } }
+    labels: { logging.service: alloy }
+    logging: *default-logging
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: devops-node-exporter
+    # Host network + host PID namespace so it sees the HOST's NICs, processes and load,
+    # not the container's. It listens only on the monitoring bridge gateway IP
+    # (private, not routable from outside), so it is not exposed on public interfaces.
+    network_mode: host
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --web.listen-address=${MONITORING_GATEWAY:-172.31.250.1}:9100
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+|var/lib/containerd/.+)($$|/)
+      - --collector.netdev.device-exclude=^(lo|veth.*|br-.*|docker.*)$$
+    volumes:
+      - /:/host:ro,rslave
+    restart: unless-stopped
+    deploy: { resources: { limits: { cpus: "0.25", memory: 128M } } }
+    labels: { logging.service: node-exporter }
+    logging: *default-logging
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: devops-cadvisor
+    # cAdvisor reads cgroup and Docker state for every container on the host.
+    privileged: true
+    devices: [/dev/kmsg]
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=15s
+      - --store_container_labels=false
+      - --whitelisted_container_labels=logging.service,app.environment
+      - --disable_metrics=advtcp,cpu_topology,cpuset,hugetlb,memory_numa,percpu,process,referenced_memory,resctrl,sched,tcp,udp
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks: [monitoring]
+    restart: unless-stopped
+    deploy: { resources: { limits: { cpus: "0.5", memory: 256M } } }
+    labels: { logging.service: cadvisor }
+    logging: *default-logging
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: devops-grafana
+    ports:
+      - "${GRAFANA_BIND:-127.0.0.1}:${GRAFANA_HOST_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:?Set GF_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/application.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks: [monitoring]
+    depends_on: [prometheus, loki]
+    restart: unless-stopped
+    deploy: { resources: { limits: { cpus: "0.5", memory: 256M } } }
+    labels: { logging.service: grafana }
+    logging: *default-logging
+
+networks:
+  monitoring:
+    name: devops-monitoring
+    ipam:
+      config:
+        - subnet: ${MONITORING_SUBNET:-172.31.250.0/24}
+          gateway: ${MONITORING_GATEWAY:-172.31.250.1}
+  devops-app:
+    name: devops-app-net
+    external: true
+
+volumes:
+  prometheus-data:
+  loki-data:
+  alloy-data:
+  grafana-data:

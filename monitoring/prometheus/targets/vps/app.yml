@@ -1,0 +1,7 @@
+# VPS run (PROM_TARGETS=vps): containers deployed by CD (scripts/deploy.sh).
+- targets: ["devops-app-staging:8080"]
+  labels:
+    env: staging
+- targets: ["devops-app-production:8080"]
+  labels:
+    env: production
