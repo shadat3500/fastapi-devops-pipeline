@@ -10,7 +10,6 @@ coverage.xml
 htmlcov/
 
 # Secrets / local env
-.env
 *.env
 !.env.example
 !*.example.env
@@ -31,5 +30,6 @@ health_log.txt*
 # OS / editor
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
+config.bat
+node_modules

@@ -1,0 +1,638 @@
+
+$ tflocal init -input=false -reconfigure -backend-config=envs/staging.backend.hcl
+============================================================================
+  WARNING: 'tflocal' is deprecated. Use 'lstk terraform' instead.
+============================================================================
+
+  'tflocal' no longer receives updates.
+
+  Get started with 'lstk', the new LocalStack CLI:
+  https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/
+
+  Switch your scripts and CI workflows to 'lstk terraform':
+  https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/migration/#infrastructure-as-code
+
+============================================================================
+
+Continuing with 'tflocal'...
+
+Initializing the backend...
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
+Initializing provider plugins...
+- Reusing version 6.72.0 of hashicorp/aws from the dependency lock file
+- Using previously-installed hashicorp/aws v6.72.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+$ tflocal destroy -input=false -auto-approve -var-file=envs/staging.tfvars -var-file=envs/localstack.tfvars
+============================================================================
+  WARNING: 'tflocal' is deprecated. Use 'lstk terraform' instead.
+============================================================================
+
+  'tflocal' no longer receives updates.
+
+  Get started with 'lstk', the new LocalStack CLI:
+  https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/
+
+  Switch your scripts and CI workflows to 'lstk terraform':
+  https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/migration/#infrastructure-as-code
+
+============================================================================
+
+Continuing with 'tflocal'...
+
+data.aws_iam_policy_document.ec2_assume: Reading...
+data.aws_vpc.default: Reading...
+data.aws_ssm_parameter.al2023_ami[0]: Reading...
+aws_cloudwatch_log_group.app: Refreshing state... [id=/devops-app/staging/app]
+data.aws_iam_policy_document.ec2_assume: Read complete after 0s [id=2851119427]
+aws_iam_openid_connect_provider.github[0]: Refreshing state... [id=arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com]
+aws_iam_role.instance: Refreshing state... [id=devops-app-staging-instance]
+data.aws_ssm_parameter.al2023_ami[0]: Read complete after 0s [id=/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64]
+data.aws_iam_policy_document.github_assume: Reading...
+data.aws_iam_policy_document.github_assume: Read complete after 0s [id=3240577324]
+aws_iam_role.github_deploy: Refreshing state... [id=devops-app-staging-github-deploy]
+data.aws_iam_policy_document.logs: Reading...
+data.aws_iam_policy_document.logs: Read complete after 0s [id=3484968192]
+data.aws_vpc.default: Read complete after 0s [id=vpc-c0af6b00bd49ce21d]
+data.aws_subnets.default: Reading...
+aws_security_group.app: Refreshing state... [id=sg-46c58ead469fe5b84]
+data.aws_subnets.default: Read complete after 0s [id=us-east-1]
+aws_iam_role_policy_attachment.ssm_core: Refreshing state... [id=devops-app-staging-instance/arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore]
+aws_iam_instance_profile.instance: Refreshing state... [id=devops-app-staging-instance]
+aws_iam_role_policy.logs: Refreshing state... [id=devops-app-staging-instance:cloudwatch-logs-write]
+aws_vpc_security_group_egress_rule.http: Refreshing state... [id=sgr-db0f43e244c96a6ac]
+aws_vpc_security_group_egress_rule.https: Refreshing state... [id=sgr-e5e0ae1ca493329f6]
+aws_vpc_security_group_ingress_rule.app["0.0.0.0/0"]: Refreshing state... [id=sgr-df8b37099f7ad6961]
+aws_instance.app: Refreshing state... [id=i-99d84c558db87dcf8]
+data.aws_iam_policy_document.github_deploy: Reading...
+data.aws_iam_policy_document.github_deploy: Read complete after 0s [id=3892709563]
+aws_iam_role_policy.github_deploy: Refreshing state... [id=devops-app-staging-github-deploy:ssm-deploy]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # aws_cloudwatch_log_group.app will be destroyed
+  - resource "aws_cloudwatch_log_group" "app" {
+      - arn                         = "arn:aws:logs:us-east-1:000000000000:log-group:/devops-app/staging/app" -> null
+      - deletion_protection_enabled = false -> null
+      - id                          = "/devops-app/staging/app" -> null
+      - log_group_class             = "STANDARD" -> null
+      - name                        = "/devops-app/staging/app" -> null
+      - region                      = "us-east-1" -> null
+      - retention_in_days           = 7 -> null
+      - skip_destroy                = false -> null
+      - tags                        = {} -> null
+      - tags_all                    = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+        # (2 unchanged attributes hidden)
+    }
+
+  # aws_iam_instance_profile.instance will be destroyed
+  - resource "aws_iam_instance_profile" "instance" {
+      - arn         = "arn:aws:iam::000000000000:instance-profile/devops-app-staging-instance" -> null
+      - create_date = "2026-11-10T11:27:13Z" -> null
+      - id          = "devops-app-staging-instance" -> null
+      - name        = "devops-app-staging-instance" -> null
+      - path        = "/" -> null
+      - role        = "devops-app-staging-instance" -> null
+      - tags        = {} -> null
+      - tags_all    = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - unique_id   = "AIPAQAAAAAAAC2KRMFSJW" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # aws_iam_openid_connect_provider.github[0] will be destroyed
+  - resource "aws_iam_openid_connect_provider" "github" {
+      - arn             = "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com" -> null
+      - client_id_list  = [
+          - "sts.amazonaws.com",
+        ] -> null
+      - id              = "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com" -> null
+      - tags            = {} -> null
+      - tags_all        = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - thumbprint_list = [] -> null
+      - url             = "token.actions.githubusercontent.com" -> null
+    }
+
+  # aws_iam_role.github_deploy will be destroyed
+  - resource "aws_iam_role" "github_deploy" {
+      - arn                   = "arn:aws:iam::000000000000:role/devops-app-staging-github-deploy" -> null
+      - assume_role_policy    = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action    = "sts:AssumeRoleWithWebIdentity"
+                      - Condition = {
+                          - StringEquals = {
+                              - "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+                              - "token.actions.githubusercontent.com:sub" = "repo:shadat3500/fastapi-devops-pipeline:environment:staging"
+                            }
+                        }
+                      - Effect    = "Allow"
+                      - Principal = {
+                          - Federated = "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com"
+                        }
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> null
+      - create_date           = "2026-11-10T11:27:13Z" -> null
+      - description           = "Assumed by GitHub Actions (OIDC) to deploy devops-app to staging" -> null
+      - force_detach_policies = false -> null
+      - id                    = "devops-app-staging-github-deploy" -> null
+      - managed_policy_arns   = [] -> null
+      - max_session_duration  = 3600 -> null
+      - name                  = "devops-app-staging-github-deploy" -> null
+      - path                  = "/" -> null
+      - tags                  = {} -> null
+      - tags_all              = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - unique_id             = "AROAQAAAAAAAOLMCKODYE" -> null
+        # (2 unchanged attributes hidden)
+
+      - inline_policy {
+          - name   = "ssm-deploy" -> null
+          - policy = jsonencode(
+                {
+                  - Statement = [
+                      - {
+                          - Action   = "ssm:SendCommand"
+                          - Effect   = "Allow"
+                          - Resource = [
+                              - "arn:aws:ssm:us-east-1::document/AWS-RunShellScript",
+                              - "arn:aws:ec2:us-east-1:000000000000:instance/i-99d84c558db87dcf8",
+                            ]
+                          - Sid      = "SendDeployCommandToThisInstance"
+                        },
+                      - {
+                          - Action   = [
+                              - "ssm:ListCommandInvocations",
+                              - "ssm:GetCommandInvocation",
+                            ]
+                          - Effect   = "Allow"
+                          - Resource = "*"
+                          - Sid      = "ReadCommandResults"
+                        },
+                    ]
+                  - Version   = "2012-10-17"
+                }
+            ) -> null
+        }
+    }
+
+  # aws_iam_role.instance will be destroyed
+  - resource "aws_iam_role" "instance" {
+      - arn                   = "arn:aws:iam::000000000000:role/devops-app-staging-instance" -> null
+      - assume_role_policy    = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action    = "sts:AssumeRole"
+                      - Effect    = "Allow"
+                      - Principal = {
+                          - Service = "ec2.amazonaws.com"
+                        }
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> null
+      - create_date           = "2026-11-10T11:27:13Z" -> null
+      - description           = "devops-app staging EC2 instance role" -> null
+      - force_detach_policies = false -> null
+      - id                    = "devops-app-staging-instance" -> null
+      - managed_policy_arns   = [
+          - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+        ] -> null
+      - max_session_duration  = 3600 -> null
+      - name                  = "devops-app-staging-instance" -> null
+      - path                  = "/" -> null
+      - tags                  = {} -> null
+      - tags_all              = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - unique_id             = "AROAQAAAAAAAEOMWPGVCK" -> null
+        # (2 unchanged attributes hidden)
+
+      - inline_policy {
+          - name   = "cloudwatch-logs-write" -> null
+          - policy = jsonencode(
+                {
+                  - Statement = [
+                      - {
+                          - Action   = [
+                              - "logs:PutLogEvents",
+                              - "logs:DescribeLogStreams",
+                              - "logs:CreateLogStream",
+                            ]
+                          - Effect   = "Allow"
+                          - Resource = "arn:aws:logs:us-east-1:000000000000:log-group:/devops-app/staging/app:*"
+                          - Sid      = "WriteContainerLogs"
+                        },
+                    ]
+                  - Version   = "2012-10-17"
+                }
+            ) -> null
+        }
+    }
+
+  # aws_iam_role_policy.github_deploy will be destroyed
+  - resource "aws_iam_role_policy" "github_deploy" {
+      - id          = "devops-app-staging-github-deploy:ssm-deploy" -> null
+      - name        = "ssm-deploy" -> null
+      - policy      = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action   = "ssm:SendCommand"
+                      - Effect   = "Allow"
+                      - Resource = [
+                          - "arn:aws:ssm:us-east-1::document/AWS-RunShellScript",
+                          - "arn:aws:ec2:us-east-1:000000000000:instance/i-99d84c558db87dcf8",
+                        ]
+                      - Sid      = "SendDeployCommandToThisInstance"
+                    },
+                  - {
+                      - Action   = [
+                          - "ssm:ListCommandInvocations",
+                          - "ssm:GetCommandInvocation",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "*"
+                      - Sid      = "ReadCommandResults"
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> null
+      - role        = "devops-app-staging-github-deploy" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # aws_iam_role_policy.logs will be destroyed
+  - resource "aws_iam_role_policy" "logs" {
+      - id          = "devops-app-staging-instance:cloudwatch-logs-write" -> null
+      - name        = "cloudwatch-logs-write" -> null
+      - policy      = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action   = [
+                          - "logs:PutLogEvents",
+                          - "logs:DescribeLogStreams",
+                          - "logs:CreateLogStream",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:logs:us-east-1:000000000000:log-group:/devops-app/staging/app:*"
+                      - Sid      = "WriteContainerLogs"
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> null
+      - role        = "devops-app-staging-instance" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # aws_iam_role_policy_attachment.ssm_core will be destroyed
+  - resource "aws_iam_role_policy_attachment" "ssm_core" {
+      - id         = "devops-app-staging-instance/arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" -> null
+      - policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" -> null
+      - role       = "devops-app-staging-instance" -> null
+    }
+
+  # aws_instance.app will be destroyed
+  - resource "aws_instance" "app" {
+      - ami                                  = (sensitive value) -> null
+      - arn                                  = "arn:aws:ec2:us-east-1:000000000000:instance/i-99d84c558db87dcf8" -> null
+      - associate_public_ip_address          = true -> null
+      - availability_zone                    = "us-east-1a" -> null
+      - disable_api_stop                     = false -> null
+      - disable_api_termination              = false -> null
+      - ebs_optimized                        = false -> null
+      - force_destroy                        = false -> null
+      - get_password_data                    = false -> null
+      - hibernation                          = false -> null
+      - iam_instance_profile                 = "devops-app-staging-instance" -> null
+      - id                                   = "i-99d84c558db87dcf8" -> null
+      - instance_initiated_shutdown_behavior = "stop" -> null
+      - instance_state                       = "running" -> null
+      - instance_type                        = "t3.micro" -> null
+      - ipv6_address_count                   = 0 -> null
+      - ipv6_addresses                       = [] -> null
+      - monitoring                           = false -> null
+      - placement_partition_number           = 0 -> null
+      - primary_network_interface_id         = "eni-24cac1acb002cce22" -> null
+      - private_dns                          = "ip-172-31-0-5.ec2.internal" -> null
+      - private_ip                           = "172.31.0.5" -> null
+      - public_dns                           = "ec2-54-214-120-107.localhost.localstack.cloud" -> null
+      - public_ip                            = "54.214.120.107" -> null
+      - region                               = "us-east-1" -> null
+      - secondary_private_ips                = [] -> null
+      - security_groups                      = [
+          - "devops-app-staging-sg",
+        ] -> null
+      - source_dest_check                    = true -> null
+      - subnet_id                            = "subnet-586ff9714436ddce8" -> null
+      - tags                                 = {
+          - "Name" = "devops-app-staging"
+        } -> null
+      - tags_all                             = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Name"        = "devops-app-staging"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - tenancy                              = "default" -> null
+      - user_data                            = <<-EOT
+            #!/bin/bash
+            # EC2 bootstrap (cloud-init user data), rendered by Terraform.
+            # Installs Docker and runs the app with container logs shipped to CloudWatch Logs.
+            set -euo pipefail
+            exec > >(tee -a /var/log/devops-app-bootstrap.log) 2>&1
+            
+            echo "bootstrap start: env=staging image=ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.8"
+            
+            dnf -y update --security
+            dnf -y install docker
+            systemctl enable --now docker
+            
+            # State used by later CD deploys (same layout as scripts/deploy.sh).
+            install -d -m 0750 /opt/devops-app/staging
+            echo "ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.8" | sed 's/.*://' > /opt/devops-app/staging/current_tag
+            
+            docker network inspect devops-app-net >/dev/null 2>&1 || docker network create devops-app-net
+            
+            docker pull "ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.8"
+            docker rm -f devops-app-staging 2>/dev/null || true
+            docker run -d \
+              --name devops-app-staging \
+              --restart unless-stopped \
+              --network devops-app-net \
+              -p 8080:8080 \
+              -e APP_ENV=staging \
+              -e LOG_LEVEL=INFO \
+              --read-only --tmpfs /tmp \
+              --cap-drop ALL --security-opt no-new-privileges:true \
+              --memory 256m --cpus 0.5 \
+              --log-driver awslogs \
+              --log-opt awslogs-region=us-east-1 \
+              --log-opt awslogs-group=/devops-app/staging/app \
+              --log-opt awslogs-stream=devops-app-staging \
+              "ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.8"
+            
+            for i in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:8080/health" >/dev/null; then
+                echo "bootstrap done: app healthy after ${i} attempt(s)"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "bootstrap: app did not become healthy" >&2
+            exit 1
+        EOT -> null
+      - user_data_replace_on_change          = true -> null
+      - vpc_security_group_ids               = [
+          - "sg-46c58ead469fe5b84",
+        ] -> null
+        # (8 unchanged attributes hidden)
+
+      - credit_specification {
+          - cpu_credits = "standard" -> null
+        }
+
+      - metadata_options {
+          - http_endpoint               = "enabled" -> null
+          - http_protocol_ipv6          = "disabled" -> null
+          - http_put_response_hop_limit = 2 -> null
+          - http_tokens                 = "required" -> null
+          - instance_metadata_tags      = "disabled" -> null
+        }
+
+      - primary_network_interface {
+          - delete_on_termination = false -> null
+          - network_interface_id  = "eni-24cac1acb002cce22" -> null
+        }
+
+      - root_block_device {
+          - delete_on_termination = true -> null
+          - device_name           = "/dev/xvda" -> null
+          - encrypted             = true -> null
+          - iops                  = 3000 -> null
+          - kms_key_id            = "arn:aws:kms:us-east-1:000000000000:key/7d28e247-d2ae-4975-a985-d3d0963cebcd" -> null
+          - tags                  = {} -> null
+          - tags_all              = {
+              - "Environment" = "staging"
+              - "ManagedBy"   = "terraform"
+              - "Project"     = "devops-app"
+              - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+            } -> null
+          - throughput            = 0 -> null
+          - volume_id             = "vol-aad22595c50f62789" -> null
+          - volume_size           = 10 -> null
+          - volume_type           = "gp3" -> null
+        }
+    }
+
+  # aws_security_group.app will be destroyed
+  - resource "aws_security_group" "app" {
+      - arn                    = "arn:aws:ec2:us-east-1:000000000000:security-group/sg-46c58ead469fe5b84" -> null
+      - description            = "devops-app staging: app port only. No SSH - access is via SSM Session Manager." -> null
+      - egress                 = [
+          - {
+              - cidr_blocks      = [
+                  - "0.0.0.0/0",
+                ]
+              - description      = "HTTP egress (package mirrors)"
+              - from_port        = 80
+              - ipv6_cidr_blocks = []
+              - prefix_list_ids  = []
+              - protocol         = "tcp"
+              - security_groups  = []
+              - self             = false
+              - to_port          = 80
+            },
+          - {
+              - cidr_blocks      = [
+                  - "0.0.0.0/0",
+                ]
+              - description      = "HTTPS egress (image pulls, OS packages, SSM, CloudWatch)"
+              - from_port        = 443
+              - ipv6_cidr_blocks = []
+              - prefix_list_ids  = []
+              - protocol         = "tcp"
+              - security_groups  = []
+              - self             = false
+              - to_port          = 443
+            },
+        ] -> null
+      - id                     = "sg-46c58ead469fe5b84" -> null
+      - ingress                = [
+          - {
+              - cidr_blocks      = [
+                  - "0.0.0.0/0",
+                ]
+              - description      = "App HTTP"
+              - from_port        = 8080
+              - ipv6_cidr_blocks = []
+              - prefix_list_ids  = []
+              - protocol         = "tcp"
+              - security_groups  = []
+              - self             = false
+              - to_port          = 8080
+            },
+        ] -> null
+      - name                   = "devops-app-staging-sg" -> null
+      - owner_id               = "000000000000" -> null
+      - region                 = "us-east-1" -> null
+      - revoke_rules_on_delete = false -> null
+      - tags                   = {
+          - "Name" = "devops-app-staging-sg"
+        } -> null
+      - tags_all               = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Name"        = "devops-app-staging-sg"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - vpc_id                 = "vpc-c0af6b00bd49ce21d" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # aws_vpc_security_group_egress_rule.http will be destroyed
+  - resource "aws_vpc_security_group_egress_rule" "http" {
+      - arn                    = "arn:aws:ec2:us-east-1:000000000000:security-group-rule/sgr-db0f43e244c96a6ac" -> null
+      - cidr_ipv4              = "0.0.0.0/0" -> null
+      - description            = "HTTP egress (package mirrors)" -> null
+      - from_port              = 80 -> null
+      - id                     = "sgr-db0f43e244c96a6ac" -> null
+      - ip_protocol            = "tcp" -> null
+      - region                 = "us-east-1" -> null
+      - security_group_id      = "sg-46c58ead469fe5b84" -> null
+      - security_group_rule_id = "sgr-db0f43e244c96a6ac" -> null
+      - tags_all               = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - to_port                = 80 -> null
+    }
+
+  # aws_vpc_security_group_egress_rule.https will be destroyed
+  - resource "aws_vpc_security_group_egress_rule" "https" {
+      - arn                    = "arn:aws:ec2:us-east-1:000000000000:security-group-rule/sgr-e5e0ae1ca493329f6" -> null
+      - cidr_ipv4              = "0.0.0.0/0" -> null
+      - description            = "HTTPS egress (image pulls, OS packages, SSM, CloudWatch)" -> null
+      - from_port              = 443 -> null
+      - id                     = "sgr-e5e0ae1ca493329f6" -> null
+      - ip_protocol            = "tcp" -> null
+      - region                 = "us-east-1" -> null
+      - security_group_id      = "sg-46c58ead469fe5b84" -> null
+      - security_group_rule_id = "sgr-e5e0ae1ca493329f6" -> null
+      - tags_all               = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - to_port                = 443 -> null
+    }
+
+  # aws_vpc_security_group_ingress_rule.app["0.0.0.0/0"] will be destroyed
+  - resource "aws_vpc_security_group_ingress_rule" "app" {
+      - arn                    = "arn:aws:ec2:us-east-1:000000000000:security-group-rule/sgr-df8b37099f7ad6961" -> null
+      - cidr_ipv4              = "0.0.0.0/0" -> null
+      - description            = "App HTTP" -> null
+      - from_port              = 8080 -> null
+      - id                     = "sgr-df8b37099f7ad6961" -> null
+      - ip_protocol            = "tcp" -> null
+      - region                 = "us-east-1" -> null
+      - security_group_id      = "sg-46c58ead469fe5b84" -> null
+      - security_group_rule_id = "sgr-df8b37099f7ad6961" -> null
+      - tags_all               = {
+          - "Environment" = "staging"
+          - "ManagedBy"   = "terraform"
+          - "Project"     = "devops-app"
+          - "Repository"  = "shadat3500/fastapi-devops-pipeline"
+        } -> null
+      - to_port                = 8080 -> null
+    }
+
+Plan: 0 to add, 0 to change, 13 to destroy.
+
+Changes to Outputs:
+  - app_url                = "http://54.214.120.107:8080" -> null
+  - github_deploy_role_arn = "arn:aws:iam::000000000000:role/devops-app-staging-github-deploy" -> null
+  - instance_id            = "i-99d84c558db87dcf8" -> null
+  - log_group              = "/devops-app/staging/app" -> null
+  - public_ip              = "54.214.120.107" -> null
+  - security_group_id      = "sg-46c58ead469fe5b84" -> null
+aws_iam_role_policy.github_deploy: Destroying... [id=devops-app-staging-github-deploy:ssm-deploy]
+aws_iam_role_policy.logs: Destroying... [id=devops-app-staging-instance:cloudwatch-logs-write]
+aws_vpc_security_group_egress_rule.https: Destroying... [id=sgr-e5e0ae1ca493329f6]
+aws_iam_role_policy_attachment.ssm_core: Destroying... [id=devops-app-staging-instance/arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore]
+aws_vpc_security_group_ingress_rule.app["0.0.0.0/0"]: Destroying... [id=sgr-df8b37099f7ad6961]
+aws_vpc_security_group_egress_rule.http: Destroying... [id=sgr-db0f43e244c96a6ac]
+aws_iam_role_policy_attachment.ssm_core: Destruction complete after 0s
+aws_iam_role_policy.logs: Destruction complete after 0s
+aws_iam_role_policy.github_deploy: Destruction complete after 0s
+aws_iam_role.github_deploy: Destroying... [id=devops-app-staging-github-deploy]
+aws_instance.app: Destroying... [id=i-99d84c558db87dcf8]
+aws_vpc_security_group_egress_rule.http: Destruction complete after 0s
+aws_vpc_security_group_egress_rule.https: Destruction complete after 0s
+aws_vpc_security_group_ingress_rule.app["0.0.0.0/0"]: Destruction complete after 0s
+aws_iam_role.github_deploy: Destruction complete after 0s
+aws_iam_openid_connect_provider.github[0]: Destroying... [id=arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com]
+aws_iam_openid_connect_provider.github[0]: Destruction complete after 0s
+aws_instance.app: Still destroying... [id=i-99d84c558db87dcf8, 00m10s elapsed]
+aws_instance.app: Destruction complete after 10s
+aws_iam_instance_profile.instance: Destroying... [id=devops-app-staging-instance]
+aws_cloudwatch_log_group.app: Destroying... [id=/devops-app/staging/app]
+aws_security_group.app: Destroying... [id=sg-46c58ead469fe5b84]
+aws_cloudwatch_log_group.app: Destruction complete after 0s
+aws_iam_instance_profile.instance: Destruction complete after 0s
+aws_iam_role.instance: Destroying... [id=devops-app-staging-instance]
+aws_security_group.app: Destruction complete after 0s
+aws_iam_role.instance: Destruction complete after 0s
+
+Destroy complete! Resources: 13 destroyed.
