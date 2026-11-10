@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
 from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
+from app.logging_setup import JsonFormatter
 from app.main import create_app
 
 
@@ -80,20 +80,26 @@ def test_error_endpoint_counts_as_error() -> None:
     assert float(line.rsplit(" ", 1)[1]) >= 1
 
 
-def test_logs_are_json(client: TestClient, capsys: pytest.CaptureFixture[str]) -> None:
-    # configure_logging writes to the sys.stdout captured at handler creation;
-    # rebind the handler to the pytest-captured stream.
-    handler = logging.getLogger().handlers[0]
-    assert isinstance(handler, logging.StreamHandler)
-    handler.setStream(sys.stdout)
-    client.get("/health")
-    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
-    entry = json.loads(lines[-1])
+def test_request_log_is_structured_json(client: TestClient, caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level(logging.INFO, logger="app"):
+        client.get("/health")
+    record = next(r for r in caplog.records if r.name == "app" and r.getMessage() == "request")
+    entry = json.loads(JsonFormatter(service="devops-app", env="test", version="1.2.3").format(record))
     assert entry["level"] == "info"
+    assert entry["msg"] == "request"
+    assert entry["method"] == "GET"
     assert entry["path"] == "/health"
     assert entry["status"] == 200
     assert entry["env"] == "test"
     assert "duration_ms" in entry
+
+
+def test_unmatched_path_logged_as_warning(client: TestClient, caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level(logging.INFO, logger="app"):
+        assert client.get("/nope").status_code == 404
+    record = next(r for r in caplog.records if r.name == "app" and r.getMessage() == "request")
+    assert record.levelno == logging.WARNING
+    assert record.path == "unmatched"  # type: ignore[attr-defined]
 
 
 def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
