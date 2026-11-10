@@ -98,7 +98,7 @@
       },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "value_and_name" },
       "targets": [
-        { "refId": "A", "expr": "up{job=\"app\", env=~\"$env\"}", "legendFormat": "{{env}}" }
+        { "refId": "A", "expr": "up{job=\"app\", env=~\"$env\"}", "legendFormat": "{{env}}", "instant": true }
       ]
     },
     {
@@ -116,7 +116,7 @@
       },
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "refId": "A", "legendFormat": "{{env}}", "expr": "100 * (sum by (env) (rate(http_errors_total{job=\"app\", env=~\"$env\"}[$__rate_interval])) / clamp_min(sum by (env) (rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval])), 1e-9))" }
+        { "refId": "A", "legendFormat": "{{env}}", "expr": "100 * ((sum by (env) (rate(http_errors_total{job=\"app\", env=~\"$env\"}[$__rate_interval])) or 0 * sum by (env) (rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval]))) / clamp_min(sum by (env) (rate(http_requests_total{job=\"app\", env=~\"$env\"}[$__rate_interval])), 1e-9))" }
       ]
     },
     {
@@ -126,7 +126,7 @@
       "datasource": { "type": "loki", "uid": "loki" },
       "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true, "dedupStrategy": "none", "prettifyLogMessage": false },
       "targets": [
-        { "refId": "A", "expr": "{service=\"app\", env=~\"$env\", level=~\"error|warning\"}" }
+        { "refId": "A", "expr": "{service=\"app\", env=~\"$env\", level=~\"error|warning\"} | json duration_ms=\"duration_ms\", msg=\"msg\" | line_format \"{{.env}} {{.level}} {{.method}} {{.path}} → {{.status}} ({{.duration_ms}} ms) {{.msg}}\"" }
       ]
     },
     {
