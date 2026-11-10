@@ -9,6 +9,7 @@ Referenced from the main README:
 | `cd-pipeline-success.png` | CD run: CI gate → build & push → staging → production, all green |
 | `cd-auto-rollback.png` | CD #7: staging failed + rolled back, production skipped |
 | `grafana-application.png` | Application dashboard during the error spike (logs panel next to error rate) |
+| `grafana-application-normal.png` | Application dashboard with normal traffic |
 | `grafana-host.png` | Host dashboard |
 | `grafana-containers.png` | Containers dashboard (memory vs limit) |
 | `grafana-alert-firing.png` | Alerting → AppHighErrorRate firing |

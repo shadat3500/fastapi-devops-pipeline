@@ -586,9 +586,23 @@ On the VPS, all 8 targets were `up`.
 | **Host** | CPU %, memory %, root disk %, load per CPU, uptime; CPU by mode; memory (used, cache, swap); **disk usage per mount point**; disk I/O; **network rx/tx**; load average vs core count |
 | **Containers** | **memory working set as % of the configured limit** (bar gauge and table, only for containers that have a limit); CPU cores per container; memory per container; CPU throttling %; network per container. The `Container` variable's "All" shows only this project's `devops-*` containers on the shared host. |
 
-| Application | Host | Containers |
-|---|---|---|
-| ![Application dashboard](docs/screenshots/grafana-application.png) | ![Host dashboard](docs/screenshots/grafana-host.png) | ![Containers dashboard](docs/screenshots/grafana-containers.png) |
+**Application dashboard during the error-spike demo.** Staging's 5xx ratio climbs to about 20%, well above
+the 5% alert line (red band). The log panel beside it shows the matching `level=error … path=/error … status=500`
+lines next to the 404 warnings, so the cause is visible without leaving the dashboard. The status-code panel
+below separates `staging 500` from `staging 200/404`, and p50/p95/p99 stay at about 2.5 / 4.8 / 5.2 ms, so the errors
+are not a latency or saturation problem.
+
+![Application dashboard: error spike](docs/screenshots/grafana-application.png)
+
+**Application dashboard with normal traffic** (before the spike): about 1.2 req/s, 0% errors, p95 4.75 ms,
+production and staging both up. The "local DOWN" tile is a stale target from before I switched
+Prometheus to the VPS targets; the panel now uses an instant query, so removed targets no longer linger.
+
+![Application dashboard: normal traffic](docs/screenshots/grafana-application-normal.png)
+
+| Host | Containers |
+|---|---|
+| ![Host dashboard](docs/screenshots/grafana-host.png) | ![Containers dashboard](docs/screenshots/grafana-containers.png) |
 
 ### Alerting rules ([`alerts.yml`](monitoring/prometheus/alerts.yml))
 
