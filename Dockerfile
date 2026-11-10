@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
-# Pinned to an exact patch + Alpine version; Dependabot proposes bumps. To pin by digest:
+# Base image pinned to an exact Python patch + Alpine version. It is written literally in
+# both FROM lines (not via ARG) so hadolint (DL3006) and Dependabot can both read the tag.
+# To pin by digest as well:
 #   docker buildx imagetools inspect python:3.13.9-alpine3.22 --format '{{json .Manifest.Digest}}'
 # then use python:3.13.9-alpine3.22@sha256:<digest>
-ARG PYTHON_IMAGE=python:3.13.9-alpine3.22
 
 # ---------- Stage 1: build dependencies into an isolated virtualenv ----------
-FROM ${PYTHON_IMAGE} AS builder
+FROM python:3.13.9-alpine3.22 AS builder
 
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -18,7 +19,7 @@ RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip uninstall -y pip
 
 # ---------- Stage 2: minimal runtime ----------
-FROM ${PYTHON_IMAGE} AS runtime
+FROM python:3.13.9-alpine3.22 AS runtime
 
 ARG APP_VERSION=0.0.0-dev
 ARG VCS_REF=unknown
@@ -33,9 +34,14 @@ LABEL org.opencontainers.image.title="devops-app" \
       org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.licenses="MIT"
 
-# Remove pip from the runtime image (not needed at runtime, smaller CVE surface)
-# and create an unprivileged user with a fixed UID (matches k8s runAsUser).
-RUN python -m pip uninstall -y pip \
+# 1. Pull in Alpine security fixes released after the base image was built
+#    (e.g. OpenSSL CVE-2026-31789, fixed in 3.5.6-r0). Only the named packages are
+#    upgraded, so the rest of the base image stays as pinned.
+# 2. Remove pip from the runtime image (not needed at runtime, smaller CVE surface).
+# 3. Create an unprivileged user with a fixed UID (matches k8s runAsUser).
+# hadolint ignore=DL3017,DL3018
+RUN apk upgrade --no-cache libcrypto3 libssl3 \
+ && python -m pip uninstall -y pip \
  && addgroup -S -g 10001 app \
  && adduser -S -D -H -u 10001 -G app -s /sbin/nologin app
 
