@@ -606,7 +606,9 @@ highest is Grafana at about 40% of 256 MiB, so nothing is near the 90% `Containe
 
 ![Containers dashboard](docs/screenshots/grafana-containers.png)
 
-**Host dashboard.**
+**Host dashboard.** Shows host CPU (about 10%, broken down by mode), memory (about 37% of 32 GiB, with cache and swap), disk usage per real mount
+point (`/` at 56%, below the 80% `HostDiskUsageHigh` threshold), disk I/O, network and load, all from Node Exporter. (The
+"Load (1m) per CPU" tile was empty in this capture because of a PromQL vector-matching bug; fixed afterwards with `scalar()`.)
 
 ![Host dashboard](docs/screenshots/grafana-host.png)
 
