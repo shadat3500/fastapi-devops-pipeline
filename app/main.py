@@ -87,6 +87,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def health() -> JSONResponse:
         if state["shutting_down"]:
             return JSONResponse({"status": "shutting_down"}, status_code=503)
+        # DEMO ONLY: deliberately broken release to prove CD auto-rollback.
+        # Passes unit tests and CI smoke test, fails the staging smoke test. Reverted after the demo.
+        if settings.app_env == "staging":
+            return JSONResponse({"status": "broken", "reason": "rollback demo"}, status_code=500)
         return JSONResponse({"status": "ok"})
 
     @app.get("/metrics")
