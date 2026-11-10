@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-app
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5          # keeps old ReplicaSets for `kubectl rollout undo`
+  minReadySeconds: 5               # a new pod must stay Ready 5s before it counts
+  progressDeadlineSeconds: 120     # rollout marked failed if stuck > 2 min
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                  # add one new pod at a time...
+      maxUnavailable: 0            # ...and never drop below desired capacity => zero downtime
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: web
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: devops-app
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001             # matches the UID created in the Dockerfile
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      # Prefer spreading replicas across nodes so one node failure doesn't take both.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: web
+      containers:
+        - name: app
+          image: devops-app            # rewritten by kustomize `images:`
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: devops-app-config
+            # Sensitive values. Created out-of-band (never committed); see k8s/README section
+            # in the main README. optional so the app still starts in a fresh cluster.
+            - secretRef:
+                name: devops-app-secret
+                optional: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          startupProbe:                # gives slow starts up to 30s before liveness applies
+            httpGet: { path: /health, port: http }
+            periodSeconds: 2
+            failureThreshold: 15
+          readinessProbe:              # gate traffic: pod receives requests only when healthy
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:               # restart a hung process
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              # Let endpoints/ingress stop routing to this pod before SIGTERM arrives.
+              exec:
+                command: ["sleep", "5"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp                    # only writable path (root FS is read-only)
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi

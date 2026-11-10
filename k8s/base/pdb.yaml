@@ -1,0 +1,10 @@
+# Node drains/upgrades may never take the service below 1 ready pod.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: devops-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: web

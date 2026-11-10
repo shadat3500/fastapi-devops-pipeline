@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: devops-app
+      app.kubernetes.io/part-of: devops-assessment
+    includeSelectors: true
+
+resources:
+  - serviceaccount.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml
+
+# Non-sensitive config, injected as env vars. Generated (not a static file) so the name
+# gets a content hash: changing config produces a new name and triggers a rolling update.
+configMapGenerator:
+  - name: devops-app-config
+    literals:
+      - PORT=8080
+      - LOG_LEVEL=INFO
+      - APP_ENV=base
+      - ENABLE_ERROR_ENDPOINT=false
+
+images:
+  - name: devops-app
+    newName: ghcr.io/shadat3500/fastapi-devops-pipeline
+    newTag: "1.0.8"

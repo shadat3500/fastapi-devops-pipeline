@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: devops-staging
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+configMapGenerator:
+  - name: devops-app-config
+    behavior: merge
+    literals:
+      - APP_ENV=staging
+      - LOG_LEVEL=DEBUG
+
+patches:
+  - target: { kind: Ingress, name: devops-app }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.devops-app.localhost
