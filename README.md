@@ -636,7 +636,7 @@ Prometheus to the VPS targets; the panel now uses an instant query, so removed t
 
 **Containers dashboard.** Memory working set as a share of each container's configured limit (bar gauge
 plus table, sorted by % of limit), and CPU and memory per container. Every container in this project has a limit; the
-highest is Grafana at about 40% of 256 MiB, so nothing is near the 90% `ContainerMemoryNearLimit` threshold.
+highest is Grafana at about 50% of 256 MiB, so nothing is near the 90% `ContainerMemoryNearLimit` threshold.
 
 ![Containers dashboard](docs/screenshots/grafana-containers.png)
 
