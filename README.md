@@ -600,9 +600,15 @@ Prometheus to the VPS targets; the panel now uses an instant query, so removed t
 
 ![Application dashboard: normal traffic](docs/screenshots/grafana-application-normal.png)
 
-| Host | Containers |
-|---|---|
-| ![Host dashboard](docs/screenshots/grafana-host.png) | ![Containers dashboard](docs/screenshots/grafana-containers.png) |
+**Containers dashboard.** Memory working set as a share of each container's configured limit (bar gauge
+plus table, sorted by % of limit), and CPU and memory per container. Every container in this project has a limit; the
+highest is Grafana at about 40% of 256 MiB, so nothing is near the 90% `ContainerMemoryNearLimit` threshold.
+
+![Containers dashboard](docs/screenshots/grafana-containers.png)
+
+**Host dashboard.**
+
+![Host dashboard](docs/screenshots/grafana-host.png)
 
 ### Alerting rules ([`alerts.yml`](monitoring/prometheus/alerts.yml))
 
