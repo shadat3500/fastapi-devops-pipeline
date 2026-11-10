@@ -89,7 +89,10 @@ services:
     logging: *default-logging
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    # v0.60+ (published on ghcr.io) understands Docker 29's containerd image store.
+    # v0.52 failed with "failed to identify the read-write layer ID" and exported no
+    # per-container (name=) series on Docker 29.
+    image: ghcr.io/google/cadvisor:v0.60.6
     container_name: devops-cadvisor
     # cAdvisor reads cgroup and Docker state for every container on the host.
     privileged: true
