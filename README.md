@@ -4,6 +4,29 @@ A small Python (FastAPI) web service taken end to end: containerized, tested and
 released as a multi-arch image, deployed with automatic rollback, provisioned with Terraform,
 run on Kubernetes, and observed with Prometheus, Grafana, Loki, Alloy, Node Exporter and cAdvisor.
 
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="http://206.162.244.11:9517"><img src="docs/screenshots/live-grafana-login.png" alt="Live Grafana login"></a><br>
+      <b>Live:</b> Grafana on the deployment VPS: <a href="http://206.162.244.11:9517">206.162.244.11:9517</a>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/grafana-application.png" alt="Application dashboard during an error spike"><br>
+      <b>Application:</b> a 5xx spike with the matching error logs beside it
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/grafana-containers.png" alt="Containers dashboard"><br>
+      <b>Containers:</b> memory against each configured limit, CPU per container (cAdvisor)
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/grafana-host.png" alt="Host dashboard"><br>
+      <b>Host:</b> CPU, memory, disk and I/O (Node Exporter)
+    </td>
+  </tr>
+</table>
+
 Every claim below is backed by a log in [`docs/evidence/`](docs/evidence/) or a screenshot in
 [`docs/screenshots/`](docs/screenshots/), produced while building this.
 
