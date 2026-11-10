@@ -34,9 +34,14 @@ LABEL org.opencontainers.image.title="devops-app" \
       org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.licenses="MIT"
 
-# Remove pip from the runtime image (not needed at runtime, smaller CVE surface)
-# and create an unprivileged user with a fixed UID (matches k8s runAsUser).
-RUN python -m pip uninstall -y pip \
+# 1. Pull in Alpine security fixes released after the base image was built
+#    (e.g. OpenSSL CVE-2026-31789, fixed in 3.5.6-r0). Only the named packages are
+#    upgraded, so the rest of the base image stays as pinned.
+# 2. Remove pip from the runtime image (not needed at runtime, smaller CVE surface).
+# 3. Create an unprivileged user with a fixed UID (matches k8s runAsUser).
+# hadolint ignore=DL3017,DL3018
+RUN apk upgrade --no-cache libcrypto3 libssl3 \
+ && python -m pip uninstall -y pip \
  && addgroup -S -g 10001 app \
  && adduser -S -D -H -u 10001 -G app -s /sbin/nologin app
 
