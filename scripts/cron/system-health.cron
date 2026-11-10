@@ -1,0 +1,5 @@
+# Alternative to the systemd timer. Install: sudo cp scripts/cron/system-health.cron /etc/cron.d/system-health
+# Every 5 minutes; stdout discarded, warnings (stderr) mailed/logged by cron.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+*/5 * * * * root /usr/local/bin/system_health.sh --quiet --log /var/log/system-health/health_log.txt >/dev/null
