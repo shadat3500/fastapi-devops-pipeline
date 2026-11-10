@@ -1,0 +1,62 @@
+namespace=devops-staging current image=ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.8 -> new tag=1.0.2
+
+##### 1. Rolling update to 1.0.2 #####
+
+[1m$ kubectl -n devops-staging set image deployment/devops-app app=ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.2[0m
+deployment.apps/devops-app image updated
+
+[1m$ kubectl -n devops-staging annotate deployment/devops-app kubernetes.io/change-cause=rollout demo: update to 1.0.2 --overwrite[0m
+deployment.apps/devops-app annotated
+
+[1m$ kubectl -n devops-staging rollout status deployment/devops-app --timeout=180s[0m
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "devops-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "devops-app" rollout to finish: 1 old replicas are pending termination...
+deployment "devops-app" successfully rolled out
+
+[1m$ kubectl -n devops-staging get pods -l app.kubernetes.io/component=web -o wide[0m
+NAME                          READY   STATUS        RESTARTS   AGE     IP          NODE                  NOMINATED NODE   READINESS GATES
+devops-app-77c45d8774-fml7r   1/1     Running       0          13s     10.42.0.6   k3d-devops-agent-0    <none>           <none>
+devops-app-77c45d8774-nhcrq   1/1     Running       0          24s     10.42.1.5   k3d-devops-agent-1    <none>           <none>
+devops-app-c888b5bfb-nd7wb    1/1     Terminating   0          2m29s   10.42.2.3   k3d-devops-server-0   <none>           <none>
+
+[1m$ kubectl -n devops-staging rollout history deployment/devops-app[0m
+deployment.apps/devops-app 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         rollout demo: update to 1.0.2
+
+
+##### 2. Rollback with kubectl rollout undo #####
+
+[1m$ kubectl -n devops-staging rollout undo deployment/devops-app[0m
+deployment.apps/devops-app rolled back
+
+[1m$ kubectl -n devops-staging rollout status deployment/devops-app --timeout=180s[0m
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "devops-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "devops-app" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "devops-app" rollout to finish: 1 old replicas are pending termination...
+deployment "devops-app" successfully rolled out
+
+[1m$ kubectl -n devops-staging get deployment/devops-app -o jsonpath={.spec.template.spec.containers[0].image}{"\n"}[0m
+ghcr.io/shadat3500/fastapi-devops-pipeline:1.0.8
+
+[1m$ kubectl -n devops-staging rollout history deployment/devops-app[0m
+deployment.apps/devops-app 
+REVISION  CHANGE-CAUSE
+2         rollout demo: update to 1.0.2
+3         <none>
+
+
+=== probe summary: 246 requests, 0 non-200 ===
+responses per (status, version):
+    114   200  version=1.0.2
+    132   200  version=1.0.8
