@@ -7,7 +7,7 @@ services:
       context: .
       args:
         APP_VERSION: ${APP_VERSION:-1.0.0}
-    container_name: app
+    container_name: devops-app
     ports:
       # Host port defaults to 8080 (task requirement); override with APP_HOST_PORT
       # if 8080 is already taken on the host, e.g. APP_HOST_PORT=8081.
@@ -45,8 +45,10 @@ services:
       # Picked up by Grafana Alloy for log collection (see monitoring/alloy).
       logging.service: app
     networks:
-      - app
+      - devops-app
 
 networks:
-  app:
-    name: app
+  devops-app:
+    # Explicit unique name so the monitoring compose file can attach to it
+    # without colliding with other projects on a shared host.
+    name: devops-app-net
