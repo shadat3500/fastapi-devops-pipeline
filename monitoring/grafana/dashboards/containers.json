@@ -1,0 +1,112 @@
+{
+  "uid": "devops-containers",
+  "title": "Containers",
+  "description": "Per-container CPU, memory (incl. % of configured limit), throttling and network from cAdvisor.",
+  "tags": ["devops-app", "containers", "cadvisor"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "links": [
+    { "title": "Application", "type": "link", "url": "/d/devops-app", "icon": "dashboard", "keepTime": true },
+    { "title": "Host", "type": "link", "url": "/d/devops-host", "icon": "dashboard", "keepTime": true }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "container",
+        "label": "Container",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": { "query": "label_values(container_memory_working_set_bytes{job=\"cadvisor\"}, name)", "refId": "container" },
+        "definition": "label_values(container_memory_working_set_bytes{job=\"cadvisor\"}, name)",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "includeAll": true,
+        "multi": true,
+        "allValue": "devops-.*",
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "bargauge", "title": "Memory usage vs configured limit",
+      "description": "working_set / memory limit. Only containers with a limit are shown. Alert ContainerMemoryNearLimit fires above 90% for 5m.",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100,
+        "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 75 }, { "color": "red", "value": 90 } ] } }, "overrides": [] },
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] }, "showUnfilled": true },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{name}}", "expr": "100 * max by (name) (container_memory_working_set_bytes{job=\"cadvisor\", name=~\"$container\"}) / max by (name) (container_spec_memory_limit_bytes{job=\"cadvisor\", name=~\"$container\"} > 0)" }
+      ]
+    },
+    {
+      "id": 2, "type": "table", "title": "Memory: usage and limit",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" },
+        "overrides": [ { "matcher": { "id": "byName", "options": "% of limit" }, "properties": [ { "id": "unit", "value": "percent" }, { "id": "decimals", "value": 1 },
+          { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+          { "id": "thresholds", "value": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 75 }, { "color": "red", "value": 90 } ] } } ] } ] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "% of limit", "desc": true } ] },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "expr": "max by (name) (container_memory_working_set_bytes{job=\"cadvisor\", name=~\"$container\"})" },
+        { "refId": "B", "format": "table", "instant": true, "expr": "max by (name) (container_spec_memory_limit_bytes{job=\"cadvisor\", name=~\"$container\"} > 0)" },
+        { "refId": "C", "format": "table", "instant": true, "expr": "100 * max by (name) (container_memory_working_set_bytes{job=\"cadvisor\", name=~\"$container\"}) / max by (name) (container_spec_memory_limit_bytes{job=\"cadvisor\", name=~\"$container\"} > 0)" }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "name": "container", "Value #A": "working set", "Value #B": "limit", "Value #C": "% of limit" } } }
+      ]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "CPU usage per container (cores)",
+      "gridPos": { "x": 0, "y": 9, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 3, "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"], "sortBy": "Max", "sortDesc": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{name}}", "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\", name=~\"$container\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Memory working set per container",
+      "gridPos": { "x": 12, "y": 9, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"], "sortBy": "Max", "sortDesc": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{name}}", "expr": "max by (name) (container_memory_working_set_bytes{job=\"cadvisor\", name=~\"$container\"})" }
+      ]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "CPU throttling (% of periods throttled)",
+      "description": "High throttling means the container hits its CPU limit; usually shows up as rising latency.",
+      "gridPos": { "x": 0, "y": 17, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "{{name}}", "expr": "100 * sum by (name) (rate(container_cpu_cfs_throttled_periods_total{job=\"cadvisor\", name=~\"$container\"}[$__rate_interval])) / sum by (name) (rate(container_cpu_cfs_periods_total{job=\"cadvisor\", name=~\"$container\"}[$__rate_interval]))" }
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Network per container (receive up / transmit down)",
+      "gridPos": { "x": 12, "y": 17, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "overrides": [ { "matcher": { "id": "byRegexp", "options": "tx.*" }, "properties": [ { "id": "custom.transform", "value": "negative-Y" } ] } ] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "legendFormat": "rx {{name}}", "expr": "sum by (name) (rate(container_network_receive_bytes_total{job=\"cadvisor\", name=~\"$container\"}[$__rate_interval]))" },
+        { "refId": "B", "legendFormat": "tx {{name}}", "expr": "sum by (name) (rate(container_network_transmit_bytes_total{job=\"cadvisor\", name=~\"$container\"}[$__rate_interval]))" }
+      ]
+    }
+  ]
+}
