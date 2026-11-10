@@ -11,7 +11,8 @@ services:
       - "127.0.0.1:4566:4566"   # localhost only
     environment:
       LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?export LOCALSTACK_AUTH_TOKEN first}
-      SERVICES: s3,sts,iam,ec2,ssm,logs
+      # No SERVICES allow-list: services start lazily on first use. (An allow-list broke
+      # AWS provider v6, which also calls s3control to read bucket tags.)
       # Mock EC2: Terraform gets real API responses, but no VM actually boots.
       EC2_VM_MANAGER: mock
     volumes:
