@@ -1,0 +1,17 @@
+# Keeps every pinned version (base image, Python deps, Actions) current via PRs,
+# which then pass through the same CI gates (tests + Trivy) as any other change.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: pip
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      python-deps: { patterns: ["*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }

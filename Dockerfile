@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-# Pin by version tag. CI/CD resolves and records the digest; to pin by digest:
+# Pinned to an exact patch + Alpine version; Dependabot proposes bumps. To pin by digest:
 #   docker buildx imagetools inspect python:3.13.9-alpine3.22 --format '{{json .Manifest.Digest}}'
 # then use python:3.13.9-alpine3.22@sha256:<digest>
 ARG PYTHON_IMAGE=python:3.13.9-alpine3.22
