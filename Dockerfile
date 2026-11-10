@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
-# Pinned to an exact patch + Alpine version; Dependabot proposes bumps. To pin by digest:
+# Base image pinned to an exact Python patch + Alpine version. It is written literally in
+# both FROM lines (not via ARG) so hadolint (DL3006) and Dependabot can both read the tag.
+# To pin by digest as well:
 #   docker buildx imagetools inspect python:3.13.9-alpine3.22 --format '{{json .Manifest.Digest}}'
 # then use python:3.13.9-alpine3.22@sha256:<digest>
-ARG PYTHON_IMAGE=python:3.13.9-alpine3.22
 
 # ---------- Stage 1: build dependencies into an isolated virtualenv ----------
-FROM ${PYTHON_IMAGE} AS builder
+FROM python:3.13.9-alpine3.22 AS builder
 
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -18,7 +19,7 @@ RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip uninstall -y pip
 
 # ---------- Stage 2: minimal runtime ----------
-FROM ${PYTHON_IMAGE} AS runtime
+FROM python:3.13.9-alpine3.22 AS runtime
 
 ARG APP_VERSION=0.0.0-dev
 ARG VCS_REF=unknown
