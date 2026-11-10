@@ -413,10 +413,10 @@ On real AWS, the four SSH secrets are replaced by **`AWS_ROLE_ARN`**, the `githu
 
 | | |
 |---|---|
-| PR checks all green | ![CI](docs/screenshots/ci-pr-checks.png) |
-| Trivy gate blocking CVE-2026-31789 | ![Trivy](docs/screenshots/ci-trivy-blocked.png) |
-| CD: CI gate → build → staging → production | ![CD](docs/screenshots/cd-pipeline-success.png) |
-| CD automatic rollback (staging red, production skipped) | ![Rollback](docs/screenshots/cd-auto-rollback.png) · full log: [`docs/evidence/cd-auto-rollback.log`](docs/evidence/cd-auto-rollback.log) |
+| PR checks all green | [PR #4 checks](https://github.com/shadat3500/fastapi-devops-pipeline/pull/4) (final commit `d7cd28a`: 4/4 passing) |
+| Trivy gate blocking CVE-2026-31789 | [PR #4, first run](https://github.com/shadat3500/fastapi-devops-pipeline/pull/4) (commit `96bb6e6`: "Trivy gate (fail on CRITICAL)" failed, fixed in `d7cd28a`) |
+| CD: CI gate → build → staging → production | [Actions → CD](https://github.com/shadat3500/fastapi-devops-pipeline/actions/workflows/cd.yml) (run #8, all green) |
+| CD automatic rollback (staging red, production skipped) | [Actions → CD](https://github.com/shadat3500/fastapi-devops-pipeline/actions/workflows/cd.yml) (run #7) · full log: [`docs/evidence/cd-auto-rollback.log`](docs/evidence/cd-auto-rollback.log) |
 
 ---
 
@@ -660,9 +660,9 @@ They're visible in Grafana under **Alerting → Alert rules** (data-source manag
 | **ContainerMemoryNearLimit** (warning) | working set **> 90% of limit** | 5m | At 100% the kernel OOM-kills the container. 90% for 5 minutes signals a leak or under-sized limit before that happens. Only containers with a limit are evaluated. |
 
 During the error-spike demo (20% of staging requests to `/error`), `AppHighErrorRate` moves to **Pending**
-as soon as the ratio crosses 5%, and to **Firing** once it has held for 5 minutes:
+as soon as the ratio crosses 5%, and to **Firing** once it has held for 5 minutes.
 
-![Alert firing](docs/screenshots/grafana-alert-firing.png)
+To see it live: **Grafana → Alerting → Alert rules** (all six rules and their current state).
 
 ### Hygiene and security of the stack
 
@@ -710,7 +710,33 @@ as soon as the ratio crosses 5%, and to **Firing** once it has held for 5 minute
 Results on the VPS: normal run `exit=0`; `--disk 40` → `[WARNING] Disk usage on / at 55% exceeds threshold 40%`, `exit=1`;
 `--cpu abc` → clear error, `exit=3`; 25 runs with `--max-size 1 --keep 3` → `rot.txt` plus `.1 .2 .3`, and no `.4`.
 
-![health script](docs/screenshots/health-script.png)
+```console
+$ bash system_health.sh --disk 40 --log /tmp/health_log.txt; echo "exit=$?"
+=== System health: 2026-11-10T11:00:43Z on quantum-alliance - WARNING ===
+CPU:       4.6%   (8 cores)
+Memory:   37.6%   (12040 MiB used of 32050 MiB, swap 13.5%)
+Load:    0.52 0.70 0.84 (1m 5m 15m)
+Disks:
+  /                          55%    228276 MiB of   415538 MiB  (/dev/vda1)
+  /boot                      15%       116 MiB of      880 MiB  (/dev/vda16)
+  /boot/efi                   6%         6 MiB of      104 MiB  (/dev/vda15)
+Top 5 processes by memory:
+  PID      USER           %MEM    RSS_MiB  COMMAND
+  …        root            3.3       1062  dockerd
+  …        (other users' processes on the shared host omitted)
+[WARNING] Disk usage on / at 55% exceeds threshold 40%
+exit=1
+
+$ bash system_health.sh --cpu abc; echo "exit=$?"
+system_health.sh: error: --cpu must be a number between 0 and 100 (got 'abc')
+exit=3
+
+$ ls -l /tmp/rot.txt*      # 25 runs with --max-size 1 --keep 3
+-rw-rw-r-- 1 shadat shadat  129 Nov 10 11:04 /tmp/rot.txt
+-rw-rw-r-- 1 shadat shadat 1034 Nov 10 11:04 /tmp/rot.txt.1
+-rw-rw-r-- 1 shadat shadat 1033 Nov 10 11:04 /tmp/rot.txt.2
+-rw-rw-r-- 1 shadat shadat 1033 Nov 10 11:03 /tmp/rot.txt.3
+```
 
 **Every 5 minutes, using systemd (recommended):**
 ```bash
