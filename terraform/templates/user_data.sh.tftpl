@@ -1,0 +1,45 @@
+#!/bin/bash
+# EC2 bootstrap (cloud-init user data), rendered by Terraform.
+# Installs Docker and runs the app with container logs shipped to CloudWatch Logs.
+set -euo pipefail
+exec > >(tee -a /var/log/devops-app-bootstrap.log) 2>&1
+
+echo "bootstrap start: env=${environment} image=${image}"
+
+dnf -y update --security
+dnf -y install docker
+systemctl enable --now docker
+
+# State used by later CD deploys (same layout as scripts/deploy.sh).
+install -d -m 0750 /opt/devops-app/${environment}
+echo "${image}" | sed 's/.*://' > /opt/devops-app/${environment}/current_tag
+
+docker network inspect devops-app-net >/dev/null 2>&1 || docker network create devops-app-net
+
+docker pull "${image}"
+docker rm -f devops-app-${environment} 2>/dev/null || true
+docker run -d \
+  --name devops-app-${environment} \
+  --restart unless-stopped \
+  --network devops-app-net \
+  -p ${app_port}:8080 \
+  -e APP_ENV=${environment} \
+  -e LOG_LEVEL=INFO \
+  --read-only --tmpfs /tmp \
+  --cap-drop ALL --security-opt no-new-privileges:true \
+  --memory 256m --cpus 0.5 \
+  --log-driver awslogs \
+  --log-opt awslogs-region=${aws_region} \
+  --log-opt awslogs-group=${log_group_name} \
+  --log-opt awslogs-stream=devops-app-${environment} \
+  "${image}"
+
+for i in $(seq 1 30); do
+  if curl -fsS "http://127.0.0.1:${app_port}/health" >/dev/null; then
+    echo "bootstrap done: app healthy after $${i} attempt(s)"
+    exit 0
+  fi
+  sleep 2
+done
+echo "bootstrap: app did not become healthy" >&2
+exit 1
