@@ -14,6 +14,17 @@ Every claim below is backed by a log in [`docs/evidence/`](docs/evidence/) or a 
 > task allows ("via SSM or SSH"). The OIDC role and SSM permissions for the real-AWS path are
 > already in [`terraform/oidc.tf`](terraform/oidc.tf). Details: [AWS environment](#aws-environment).
 
+### Live demo
+
+| What | Where |
+|---|---|
+| Grafana: Application, Host and Containers dashboards on the deployment VPS | **<http://206.162.244.11:9517>** |
+| Login | a read-only **Viewer** account, sent with the submission email (credentials are never committed) |
+
+For the review period, Grafana is published on the VPS's public IP. Everywhere else, the repository default
+binds it to `127.0.0.1` only (`GRAFANA_BIND`), which is what I'd run in production behind a VPN or SSO proxy.
+The Viewer role can browse dashboards and logs but can't change anything.
+
 ---
 
 ## Contents
