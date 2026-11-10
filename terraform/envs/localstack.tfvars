@@ -1,3 +1,4 @@
-# Extra variables used ONLY when testing against LocalStack (add as a second -var-file).
-# LocalStack's mocked EC2 ships its own AMI IDs; the SSM public AMI parameter may not exist.
-ami_id = "ami-df5de72bdb3b"
+# Extra variables used ONLY when testing against LocalStack (passed as a second -var-file).
+# Intentionally empty: LocalStack serves the public SSM AMI parameter, so the same AMI
+# lookup as real AWS is exercised. If your LocalStack version lacks it, set e.g.:
+#   ami_id = "<an ID from: awslocal ec2 describe-images --query 'Images[].ImageId'>"

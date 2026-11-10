@@ -5,7 +5,9 @@ name: devops-localstack
 
 services:
   localstack:
-    image: ${LOCALSTACK_IMAGE:-localstack/localstack:4.9}
+    # Pinned to the version the evidence in docs/evidence/ was produced with. (4.9 was too
+    # old for AWS provider v6, which reads bucket tags via the s3control API.)
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:2026.10.6}
     container_name: devops-localstack
     ports:
       - "127.0.0.1:4566:4566"   # localhost only
