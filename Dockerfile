@@ -7,7 +7,7 @@
 # then use python:3.13.9-alpine3.22@sha256:<digest>
 
 # ---------- Stage 1: build dependencies into an isolated virtualenv ----------
-FROM python:3.13.9-alpine3.22 AS builder
+FROM python:3.14.5-alpine3.22 AS builder
 
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -19,7 +19,7 @@ RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip uninstall -y pip
 
 # ---------- Stage 2: minimal runtime ----------
-FROM python:3.13.9-alpine3.22 AS runtime
+FROM python:3.14.5-alpine3.22 AS runtime
 
 ARG APP_VERSION=0.0.0-dev
 ARG VCS_REF=unknown
